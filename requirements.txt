@@ -1,0 +1,4 @@
+fbchat
+requests
+requests-futures
+tinydb
