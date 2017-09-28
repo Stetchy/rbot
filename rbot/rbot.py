@@ -2,45 +2,48 @@ from fbchat import log, Client
 from contextlib import suppress
 import os
 import cfg
-import random
 import requests
-import sys
 import threading
 import imp
 
 class RBot(Client):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+		self.ronline = True
 		self.load_subplugins()
 
 	def load_subplugins(self):
 		self.subplugins = {}
 		for file in os.listdir('subplugins'):
-			path = os.path.join('subplugins', file)
-			subp = imp.load_source(file, path)
-			if subp.command:
-				self.subplugins[subp.command.lower()] = subp.name
+			if not file.startswith("_"):
+				path = os.path.join('subplugins', file)
+				subp = imp.load_source(file, path)
+				print(subp)
+				if subp.command:
+					self.subplugins[subp.command.lower()] = subp
+
 	@staticmethod
-	def clean_command(text):
-		if " " in text:
-			command, message = text.split(" ", 1)
+	def clean_command(message):
+		if " " in message:
+			command, message = message.split(" ", 1)
 		else:
-			command, message = text, ""
+			command, message = message, ""
 		return command.lower(), message
 
-	def run_subplugin(self, author_id, text, thread_id, thread_type, **kwargs):
-		command, message = self.clean_command(text)
+	def run_subplugin(self, author_id, message, thread_id, thread_type, **kwargs):
+		command, message = self.clean_command(message)
 		if command in self.subplugins:
-			subplugin = self.plugins[command]
-			thread = threading.Thread(target=subplugin.main, args=(self, author_id, text, thread_id, thread_type), kwargs=kwargs)
+			subplugin = self.subplugins[command]
+			print(subplugin)
+			thread = threading.Thread(target=subplugin.main, args=(self, author_id, message, thread_id, thread_type), kwargs=kwargs)
 			thread.deamon = True
 			thread.start()
 
-	def onMessage(self, author_id, text, thread_id, thread_type, **kwargs):
-		self.markAsDelivered(thread_id)
-		if text.startswith("!"):
-			self.markAsRead()
-			self.run_subplugin(author_id, text, thread_id, thread_type, **kwargs)
+	def onMessage(self, author_id, message, thread_id, thread_type, **kwargs):
+		self.markAsDelivered(author_id, thread_id)
+		if message.startswith("!"):
+			self.markAsRead(author_id)
+			self.run_subplugin(author_id, message, thread_id, thread_type, **kwargs)
 
 if __name__ == '__main__':
 	client = RBot(cfg.email, cfg.password)
