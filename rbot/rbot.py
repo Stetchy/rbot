@@ -44,6 +44,8 @@ class RBot(Client):
 		if message.startswith("!"):
 			self.markAsRead(author_id)
 			self.run_subplugin(author_id, message, thread_id, thread_type, **kwargs)
+		if str(author_id) == "100003390970338":
+			self.sendMessage("Go away dave", thread_id=thread_id, thread_type=thread_type)
 
 if __name__ == '__main__':
 	client = RBot(cfg.email, cfg.password)
