@@ -11,6 +11,7 @@ class RBot(Client):
 		super().__init__(*args, **kwargs)
 		self.ronline = True
 		self.load_subplugins()
+		self.subs = ['!help', '!bus', '!kate', '!egg', '!taxis', '!online', '!isonline']
 
 	def load_subplugins(self):
 		self.subplugins = {}
@@ -18,7 +19,7 @@ class RBot(Client):
 			if not file.startswith("_"):
 				path = os.path.join('subplugins', file)
 				subp = imp.load_source(file, path)
-				print(subp)
+				print("module", subp.command.lower().strip("!"), "loaded successfully")
 				if subp.command:
 					self.subplugins[subp.command.lower()] = subp
 
@@ -34,18 +35,20 @@ class RBot(Client):
 		command, message = self.clean_command(message)
 		if command in self.subplugins:
 			subplugin = self.subplugins[command]
-			print(subplugin)
+			print(subplugin.command.strip("!"), "executed")
 			thread = threading.Thread(target=subplugin.main, args=(self, author_id, message, thread_id, thread_type), kwargs=kwargs)
 			thread.deamon = True
 			thread.start()
 
 	def onMessage(self, author_id, message, thread_id, thread_type, **kwargs):
 		self.markAsDelivered(author_id, thread_id)
-		if message.startswith("!"):
+		if message == "!eggs":
+			self.sendMessage("no eggs for you", thread_id=thread_id, thread_type=thread_type)
+		if message.startswith("!sendtobrady"):
+			self.sendMessage("dont even try to send anything offensive", thread_id=thread_id, thread_type=thread_type)
+		if message.startswith(tuple(self.subs)):
 			self.markAsRead(author_id)
 			self.run_subplugin(author_id, message, thread_id, thread_type, **kwargs)
-		if str(author_id) == "100003390970338":
-			self.sendMessage("Go away dave", thread_id=thread_id, thread_type=thread_type)
 
 if __name__ == '__main__':
 	client = RBot(cfg.email, cfg.password)
