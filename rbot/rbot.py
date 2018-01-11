@@ -1,4 +1,5 @@
 from fbchat import log, Client
+from fbchat.models import *
 from contextlib import suppress
 import os
 import cfg
@@ -41,11 +42,15 @@ class RBot(Client):
 			thread.start()
 
 	def onMessage(self, author_id, message, thread_id, thread_type, **kwargs):
+		trainspotting = self.fetchGroupInfo('1335479403222897')['1335479403222897']
+		ts_members = trainspotting.participants
 		self.markAsDelivered(author_id, thread_id)
 		if message == "!eggs":
 			self.sendMessage("no eggs for you", thread_id=thread_id, thread_type=thread_type)
 		if message.startswith("!sendtobrady"):
 			self.sendMessage("dont even try to send anything offensive", thread_id=thread_id, thread_type=thread_type)
+		if "@everyone" in message and thread_id == '1335479403222897':
+			self.send(Message(text='@everyone', mentions=[Mention(user, offset=10, length=8) for user in ts_members]), thread_id=thread_id, thread_type=thread_type)
 		if message.startswith(tuple(self.subs)):
 			self.markAsRead(author_id)
 			self.run_subplugin(author_id, message, thread_id, thread_type, **kwargs)
